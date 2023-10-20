@@ -1,10 +1,22 @@
 import './App.css';
-import {useState} from "react";
+import {useEffect, useState} from "react";
 
 function App() {
   const [name,setName] = useState('')
   const [datetime, setDatetime] = useState('')
   const [description, setDescription] = useState('')
+  const [transactions, setTransactions] = useState([])
+  useEffect(() => {
+    getTransactions().then(setTransactions)
+  }, [])
+
+  async function getTransactions() {
+    const url = process.env.REACT_APP_API_URL+'/transactions';
+    const response = await fetch(url);
+    return await response.json();
+  }
+
+
   function addNewTransaction(ev) {
     ev.preventDefault();
 
@@ -34,9 +46,20 @@ function App() {
         console.error('Error:', error); })
     })
   }
+  
+  let balance = 0;
+  for (const transaction of transactions) {
+    balance = balance + transaction.price
+  }
+
+  balance = balance.toFixed(2);
+  const fraction = balance.split('.')[1];
+  balance = balance.split('.')[0];
+
+
   return (
     <main>
-      <h1>$400<span>.00</span></h1>
+      <h1>£{balance}<span>.{fraction}</span></h1>
       <form onSubmit={addNewTransaction}>
         <div className="basic">
         <input type="text"
@@ -56,36 +79,20 @@ function App() {
         <button type="submit">Add new transaction</button>
       </form>
       <div className="transactions">
-        <div className="transaction">
+        {transactions.length > 0 && transactions.map(transaction => (
+          <div className="transaction">
           <div className="left">
-            <div className="name">New Jordans</div>
-            <div className="description">These look wavy. I had to cop</div>
+            <div className="name">{transaction.name}</div>
+            <div className="description">{transaction.description}</div>
           </div>
           <div className="right">
-            <div className="price">£110</div>
-            <div className="datetime">2023-10-18</div>
+            <div className={"price " +(transaction.price<0?'red':'green')}>
+              {transaction.price}
+              </div>
+            <div className="datetime">{transaction.datetime}</div>
           </div>
         </div>
-        <div className="transaction">
-          <div className="left">
-            <div className="name">New Jordans</div>
-            <div className="description">These look wavy. I had to cop</div>
-          </div>
-          <div className="right">
-            <div className="price red">-£110</div>
-            <div className="datetime">2023-10-18</div>
-          </div>
-        </div>
-        <div className="transaction">
-          <div className="left">
-            <div className="name">Depop Sale</div>
-            <div className="description">Sold a broken hearts hoodie</div>
-          </div>
-          <div className="right">
-            <div className="price green">+£110</div>
-            <div className="datetime">2023-10-18</div>
-          </div>
-        </div>
+        ) )}
       </div>
     </main>
   );
